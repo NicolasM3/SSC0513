@@ -2,10 +2,16 @@
     buffer: .space 100  
     newLine: .asciiz "\n"
     inputText: .asciiz "Digite um texto para criptografar: "
-    inputEncryption: .asciiz "(0) Cifra de cesar \nDigite o tipo de criptografia:"
+    inputEncryption: .asciiz "(0) Cifra de cesar \n(1) OTP \nDigite o tipo de criptografia:"
     
-    inputKey: .asciiz "(Cifra de cesar) Digite a chave: "
+    inputCesarKey: .asciiz "(Cifra de cesar) Digite a chave: "
     cesarCypherText: .asciiz "(Cifra de cesar) CypherText: "
+
+    inputOtpKey: .asciiz "(OTP) Digite a chave: "
+    cesarOtpText: .asciiz "(OTP) CypherText: "
+
+    myString: .asciiz "Hello, world!"
+    t2: .byte 0x55  
 
 
 .text
@@ -53,7 +59,7 @@
     criptografia1: 
         # printa e lê a chave
         li $v0, 4
-        la $a0, inputKey
+        la $a0, inputCesarKey
         syscall
 
         li $v0,5
@@ -67,11 +73,30 @@
 	# começa a encriptar
         j cesarEncrypt
         
+
+    # OTP
     criptografia2:
+        # printa e lê a chave
+        li $v0, 4
+        la $a0, inputOtpKey
+        syscall
+
+        li $v0,5
+        syscall
+        move $t3,$v0 
+
+        li $v0, 4
+        la $a0, cesarOtpText
+        syscall
+
+        # começa a encriptar
+        j optEncrypt
 
 
     criptografia3:
         
+
+     # ------------------------------------ Cesar ------------------------------------
 
     cesarEncrypt:
         lb $t4, 0($t0)
@@ -94,3 +119,22 @@
         # incrementa o ponteiro para o proximo caractere
         add $t0,$t0,1 		
         j cesarEncrypt
+
+    # ------------------------------------ OTP ------------------------------------
+
+    optEncrypt:
+        lb $t1, 0($t0)
+        beq $t1,10,end 	 		# Termina o programa no \n 
+        beqz $t1,end  			# Termina o programa no final da string
+        
+        xor $t1, $t1, $t3
+        addi $t0,$t0,1
+        j printOptEncryptChar
+
+    printOptEncryptChar:
+        # printa o caracter encryptado
+        li $v0,11 	
+        move $a0, $t1
+        syscall
+        j optEncrypt
+        
