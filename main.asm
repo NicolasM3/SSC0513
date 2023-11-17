@@ -11,9 +11,11 @@
     inputOtpKey: .asciiz "(OTP) Digite a chave: "
     cesarOtpText: .asciiz "(OTP) CypherText: "
 
+    dummy_test: .asciiz "abc"
+
     ASC: .byte    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
     binary: .space 4096  # Space for the binary representation
-    first_six: .space 7  # Space for the first 6 characters + null terminator
+    first_six: .space 7 # Space for the first 25 chars + null terminator
     length: .word 6  # The length of the binary number
 
 .text
@@ -125,7 +127,21 @@
         la $s0, ASC
         la $t1, binary  # Load the address of the binary string
 
-        j convert_string
+        li $v0, 4
+        la $a0, inputProcess
+        syscall
+
+        li $v0,12
+        syscall
+        move $t2,$v0 
+
+        # pula uma linha
+        li $v0, 4  
+        la $a0, newLine 
+        syscall
+
+        beq $t2, '0', convert_string
+        beq $t2, '1', decrypt
 
      # ------------------------------------ Cesar ------------------------------------
 
@@ -199,6 +215,8 @@
 
         li $t3, 7  # Start with the 7th bit (counting from 0)
 
+
+
     convert_char:
         srlv $t4, $t2, $t3  # Shift the character right by the current bit number
         andi $t4, $t4, 1  # Isolate the last bit
@@ -221,6 +239,19 @@
         la $t0, binary  # Load the address of the string
         la $t1, first_six  # Load the address of the new string
         li $t2, 6  # The number of characters to copy
+        li $t5, 0
+        li $t6, 0
+
+        j copy_chars
+
+    encrypt_another:
+        la $t0, binary  # Load the address of the string
+        la $t1, first_six  # Load the address of the new string
+        li $t2, 6  # The number of characters to copy
+
+        addi $t6, $t6, 1
+
+        move $t0, $t5
 
     copy_chars:
         lb $t3, 0($t0)  # Load the current character
@@ -233,6 +264,8 @@
         bnez $t2, copy_chars  # If there are more characters to copy, keep going
 
         sb $zero, 0($t1)  # Null-terminate the new string
+
+        move $t5, $t0
 
         la $t0, first_six  # Load the address of the new string
         lw $t1, length  # Load the length of the binary number
@@ -266,9 +299,7 @@
         li $v0, 11
         syscall
 
-        li $v0, 4  
-        la $a0, newLine 
-        syscall
+        bne $t6, 3, encrypt_another
 
         j end
 
@@ -290,3 +321,30 @@
 
     pow_end:
         jr $ra  # Return to the caller
+
+    decrypt:
+        beq $t2, '1', print_decrypted_char
+        la $a0, dummy_test
+
+        andi $t4, $t4, 1  # Isolate the last bit
+
+        addiu $t4, $t4, '0'  # Convert the bit to an ASCII character
+        sb $t4, 0($t1)  # Store the bit in the binary string
+
+        addiu $t1, $t1, 1  # Move to the next position in the binary string
+        addiu $t3, $t3, -1  # Move to the next bit
+
+        j print_decrypted_char
+
+    print_decrypted_char:
+        la $a0, dummy_test
+        # printa o valor
+        li $v0, 4
+        syscall
+
+        j end
+
+
+
+
+
